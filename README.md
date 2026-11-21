@@ -5,10 +5,10 @@ The [Snekot](https://snekot.co) SDK for Python. Post product events, get them as
 One module, standard library only. Python 3.8 or newer.
 
 ```bash
-pip install "snekot-events @ git+https://github.com/snekot-co/snekot-python@0.2.0"
+pip install "snekot-events @ git+https://github.com/snekot-co/snekot-python@0.3.0"
 ```
 
-That installs from this repository's `0.2.0` tag. The package is not on PyPI yet.
+That installs from this repository's `0.3.0` tag. The package is not on PyPI yet.
 
 ## Use
 
@@ -23,6 +23,12 @@ events.group("acme", user_id="user-123", properties={"name": "Acme"})
 events.subscribe("jane@example.com", name="Jane Park")
 events.insight.track(title="MRR", value="$1,289")
 events.insight.increment(title="Orders", value=1)
+```
+
+`experiment` asks which variant of an [A/B test](https://snekot.co/docs/experiments) a person gets:
+
+```python
+variant = events.experiment("pricing-page", ["control", "annual-first"], user_id="user-123")
 ```
 
 Use a private key (`sk_…`) on a server. Keys are made in the app under Setup; see [Keys](https://snekot.co/docs/keys).

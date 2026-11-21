@@ -113,6 +113,18 @@ class Conformance(unittest.TestCase):
             nowhere.track(channel="x", event="y")
         self.assertIsNone(raised.exception.status)
 
+    def test_an_experiment_answers_with_the_servers_variant(self):
+        answers.append((200, '{"experiment": "pricing", "variant": "new"}'))
+        variant = self.client.experiment("pricing", ["control", "new"], user_id="user-1")
+        self.assertEqual(variant, "new")
+        self.assertEqual(seen[0]["path"], "/v1/experiment")
+        self.assertEqual(seen[0]["body"], {"project": SUITE["project"], "experiment": "pricing", "variants": ["control", "new"], "user_id": "user-1"})
+
+    def test_a_disabled_experiment_is_its_first_variant(self):
+        self.client.disable_tracking()
+        self.assertEqual(self.client.experiment("pricing", ("control", "new")), "control")
+        self.assertEqual(seen, [])
+
     def test_disabled_tracking_sends_nothing(self):
         self.client.disable_tracking()
         self.client.track(channel="x", event="y")

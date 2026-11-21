@@ -11,10 +11,10 @@ import time
 import urllib.error
 import urllib.request
 from datetime import datetime
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Sequence, Union
 
 __all__ = ["Client", "FailedToPublish", "Refused", "Unreachable", "Properties", "DEFAULT_ENDPOINT"]
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 DEFAULT_ENDPOINT = "https://api.snekot.co"
 
@@ -114,9 +114,27 @@ class Client:
             "email": email, "name": name, "properties": properties or None, "source": source, "notify": notify,
         })
 
-    def _send(self, method: str, path: str, body: dict) -> None:
+    def experiment(self, experiment: str, variants: Sequence[str], user_id: Optional[str] = None,
+                   ip: Optional[str] = None, user_agent: Optional[str] = None) -> str:
+        """Which variant of an A/B test a person gets. The same person always gets the same one.
+
+        `variants` is two to eight names; the first is the one the others are measured against, so keep the order
+        the same everywhere. Say who is asking with `user_id`, or, for someone with no id, their `ip` and
+        `user_agent`, which are not stored. With tracking disabled it is the first variant and nothing is sent.
+        """
         if self._disabled:
-            return
+            return variants[0]
+        answer = self._request("POST", "/v1/experiment", {
+            "experiment": experiment, "variants": list(variants), "user_id": user_id, "ip": ip, "user_agent": user_agent,
+        })
+        variant = (answer or {}).get("variant")
+        return variant if isinstance(variant, str) else variants[0]
+
+    def _send(self, method: str, path: str, body: dict) -> None:
+        if not self._disabled:
+            self._request(method, path, body)
+
+    def _request(self, method: str, path: str, body: dict) -> Optional[dict]:
         payload = {key: value for key, value in body.items() if value is not None}
         payload["project"] = self._project
         request = urllib.request.Request(
@@ -132,8 +150,12 @@ class Client:
         retried = False
         while True:
             try:
-                urllib.request.urlopen(request, timeout=self._timeout).close()
-                return
+                with urllib.request.urlopen(request, timeout=self._timeout) as response:
+                    try:
+                        answer = json.loads(response.read())
+                    except ValueError:
+                        answer = None
+                return answer if isinstance(answer, dict) else None
             except urllib.error.HTTPError as error:
                 status = error.code
                 try:
