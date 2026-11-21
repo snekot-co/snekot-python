@@ -5,10 +5,10 @@ The [Snekot](https://snekot.co) SDK for Python. Post product events, get them as
 One module, standard library only. Python 3.8 or newer.
 
 ```bash
-pip install "snekot-events @ git+https://github.com/snekot-co/snekot-python@0.1.0"
+pip install "snekot-events @ git+https://github.com/snekot-co/snekot-python@0.2.0"
 ```
 
-That installs from this repository's `0.1.0` tag. The package is not on PyPI yet.
+That installs from this repository's `0.2.0` tag. The package is not on PyPI yet.
 
 ## Use
 
@@ -19,7 +19,7 @@ events = Client(token=token, project="acme-store")
 
 events.track(channel="payments", event="New subscription", icon="💰", notify=True, tags={"plan": "pro"})
 events.identify(user_id="user-123", properties={"plan": "pro"})
-events.group(user_id="user-123", group_id="acme", properties={"name": "Acme"})
+events.group("acme", user_id="user-123", properties={"name": "Acme"})
 events.subscribe("jane@example.com", name="Jane Park")
 events.insight.track(title="MRR", value="$1,289")
 events.insight.increment(title="Orders", value=1)
@@ -29,9 +29,10 @@ Use a private key (`sk_…`) on a server. Keys are made in the app under Setup; 
 
 ### Behaviour
 
-- Calls block, and one attempt may take 10 seconds.
-- A refusal (a 4xx, such as a bad channel name) raises `FailedToPublish` with the server's own sentence for what to fix, the `status` and the JSON answer as `data`.
-- A network failure raises `urllib.error.URLError`. This SDK does not retry yet.
+- Calls block, and one attempt may take 10 seconds (`timeout`, in seconds).
+- A network failure or a server error is retried once, after a quarter of a second, then raises `Unreachable`.
+- A refusal (a 4xx, such as a bad channel name) is never retried. It raises `Refused` with the server's own sentence for what to fix, the `status` and the JSON answer as `data`.
+- Both are a `FailedToPublish`, so catching that catches everything this SDK raises.
 - `disable_tracking=True`, or `events.disable_tracking()`, makes every call succeed without sending anything, for tests and local runs.
 - `endpoint` defaults to `https://api.snekot.co`.
 

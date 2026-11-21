@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from snekot_events import Client, FailedToPublish  # noqa: E402
+from snekot_events import Client, FailedToPublish, Refused, Unreachable, __version__  # noqa: E402
 
 with open(os.path.join(os.path.dirname(__file__), "conformance.json"), encoding="utf-8") as fixture:
     SUITE = json.load(fixture)
@@ -22,7 +22,7 @@ answers = []
 class Stub(BaseHTTPRequestHandler):
     def _answer(self):
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
-        seen.append({"method": self.command, "path": self.path, "body": body, "auth": self.headers["Authorization"], "type": self.headers["Content-Type"]})
+        seen.append({"method": self.command, "path": self.path, "body": body, "auth": self.headers["Authorization"], "type": self.headers["Content-Type"], "agent": self.headers["User-Agent"]})
         status, answer = answers.pop(0) if answers else (200, "{}")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
@@ -81,21 +81,37 @@ class Conformance(unittest.TestCase):
                 sent, expect = seen[0], case["expect"]
                 self.assertEqual(sent["method"], expect["method"])
                 self.assertEqual(sent["path"], expect["path"])
-                body = dict(sent["body"])
-                # This SDK always says whether to notify on an event; the fixture leaves `notify` out when it is false.
-                if case["call"] == "track" and "notify" not in expect["body"]:
-                    self.assertIs(body.pop("notify"), False)
-                self.assertEqual(body, expect["body"])
+                self.assertEqual(sent["body"], expect["body"])
+                self.assertEqual(sent["agent"], "snekot-python/" + __version__)
                 self.assertEqual(sent["auth"], "Bearer sk_test")
                 self.assertEqual(sent["type"], "application/json")
 
     def test_a_refusal_carries_the_servers_sentence(self):
         answers.append((400, '{"error": "bad channel"}'))
-        with self.assertRaises(FailedToPublish) as raised:
+        with self.assertRaises(Refused) as raised:
             self.client.track(channel="x", event="y")
+        self.assertIsInstance(raised.exception, FailedToPublish)
         self.assertEqual(str(raised.exception), "bad channel")
         self.assertEqual(raised.exception.status, 400)
         self.assertEqual(len(seen), 1)
+
+    def test_a_server_error_is_retried_once(self):
+        answers.append((503, "{}"))
+        self.client.track(channel="x", event="y")
+        self.assertEqual(len(seen), 2)
+
+    def test_two_server_errors_surface_as_unreachable(self):
+        answers.extend([(503, "{}"), (500, "not json")])
+        with self.assertRaises(Unreachable) as raised:
+            self.client.track(channel="x", event="y")
+        self.assertEqual(raised.exception.status, 500)
+        self.assertEqual(len(seen), 2)
+
+    def test_no_server_surfaces_as_unreachable(self):
+        nowhere = Client(token="sk_test", project="p", endpoint="http://127.0.0.1:1", timeout=2)
+        with self.assertRaises(Unreachable) as raised:
+            nowhere.track(channel="x", event="y")
+        self.assertIsNone(raised.exception.status)
 
     def test_disabled_tracking_sends_nothing(self):
         self.client.disable_tracking()
