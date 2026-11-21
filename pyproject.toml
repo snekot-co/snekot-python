@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "snekot-events"
+version = "0.1.0"
+description = "Post product events, identify users and set insights with Snekot."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.8"
+authors = [{ name = "Snekot" }]
+keywords = ["snekot", "events", "analytics", "event-tracking", "notifications"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://snekot.co"
+Documentation = "https://snekot.co/docs/sdks"
+Repository = "https://github.com/snekot-co/snekot-python"
+Issues = "https://github.com/snekot-co/snekot-python/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/snekot_events"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "README.md", "LICENSE"]
