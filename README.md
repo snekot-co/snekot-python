@@ -5,8 +5,10 @@ The [Snekot](https://snekot.co) SDK for Python. Post product events, get them as
 One module, standard library only. Python 3.8 or newer.
 
 ```bash
-pip install snekot-events
+pip install "snekot-events @ git+https://github.com/snekot-co/snekot-python@0.1.0"
 ```
+
+That installs from this repository's `0.1.0` tag. The package is not on PyPI yet.
 
 ## Use
 
