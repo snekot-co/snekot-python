@@ -14,7 +14,7 @@ from datetime import datetime
 from typing import Dict, Optional, Sequence, Union
 
 __all__ = ["Client", "FailedToPublish", "Refused", "Unreachable", "Properties", "DEFAULT_ENDPOINT"]
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 DEFAULT_ENDPOINT = "https://api.snekot.co"
 

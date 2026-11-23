@@ -1,0 +1,36 @@
+# Publishes snekot-events to PyPI when a release is published here. PyPI trusts this workflow by name (trusted
+# publishing), so there is no token to store or rotate.
+name: publish
+
+on:
+  release:
+    types: [published]
+  # Lets a release that already exists be published by hand, from its tag.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - run: python -m unittest discover -s tests
+      - name: The tag must be the version in pyproject.toml
+        if: github.ref_type == 'tag'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: test "$TAG" = "$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")"
+      - run: python -m pip install build && python -m build
+      - uses: pypa/gh-action-pypi-publish@release/v1
