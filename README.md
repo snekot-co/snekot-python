@@ -5,10 +5,8 @@ The [Snekot](https://snekot.co) SDK for Python. Post product events, get them as
 One module, standard library only. Python 3.8 or newer.
 
 ```bash
-pip install "snekot-events @ git+https://github.com/snekot-co/snekot-python@0.3.0"
+pip install snekot-events
 ```
-
-That installs from this repository's `0.3.0` tag. The package is not on PyPI yet.
 
 ## Use
 
@@ -47,6 +45,8 @@ Use a private key (`sk_…`) on a server. Keys are made in the app under Setup; 
 ```bash
 python -m unittest discover -s tests
 ```
+
+Publishing a release here publishes its version to PyPI; the release's tag must be the version in `pyproject.toml`.
 
 The test runs the cases in `tests/conformance.json`, the wire contract every Snekot SDK is tested against, through a stub server on your machine.
 
