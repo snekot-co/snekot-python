@@ -18,7 +18,7 @@ events = Client(token=token, project="acme-store")
 events.track(channel="payments", event="New subscription", icon="💰", notify=True, tags={"plan": "pro"})
 events.identify(user_id="user-123", properties={"plan": "pro"})
 events.group("acme", user_id="user-123", properties={"name": "Acme"})
-events.subscribe("jane@example.com", name="Jane Park")
+events.subscribe("jane@example.com", name="Jane Park", language="sv-SE", timezone="Europe/Stockholm")
 events.insight.track(title="MRR", value="$1,289")
 events.insight.increment(title="Orders", value=1)
 ```

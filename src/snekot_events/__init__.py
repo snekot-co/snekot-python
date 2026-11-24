@@ -14,7 +14,7 @@ from datetime import datetime
 from typing import Dict, Optional, Sequence, Union
 
 __all__ = ["Client", "FailedToPublish", "Refused", "Unreachable", "Properties", "DEFAULT_ENDPOINT"]
-__version__ = "0.3.1"
+__version__ = "0.4.0"
 
 DEFAULT_ENDPOINT = "https://api.snekot.co"
 
@@ -105,13 +105,17 @@ class Client:
         self._send("POST", "/v1/group", {"group_id": group_id, "user_id": user_id, "properties": properties or None})
 
     def subscribe(self, email: str, name: Optional[str] = None, properties: Optional[Properties] = None,
-                  source: Optional[str] = None, notify: Optional[bool] = None) -> None:
+                  source: Optional[str] = None, notify: Optional[bool] = None, language: Optional[str] = None,
+                  timezone: Optional[str] = None) -> None:
         """Puts an address on the project's newsletter list. Signing it up again changes nothing.
 
-        `source` is the page the signup came from, such as `/blog/launch`.
+        `source` is the page the signup came from, such as `/blog/launch`. `language` is the person's language,
+        as a tag such as `sv` or `sv-SE`. `timezone` is the person's time zone, as its IANA name, such as
+        `Europe/Stockholm`.
         """
         self._send("POST", "/v1/subscribe", {
             "email": email, "name": name, "properties": properties or None, "source": source, "notify": notify,
+            "language": language, "timezone": timezone,
         })
 
     def experiment(self, experiment: str, variants: Sequence[str], user_id: Optional[str] = None,
