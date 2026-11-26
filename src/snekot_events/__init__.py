@@ -134,6 +134,19 @@ class Client:
         variant = (answer or {}).get("variant")
         return variant if isinstance(variant, str) else variants[0]
 
+    def flag(self, flag: str, user_id: Optional[str] = None, ip: Optional[str] = None,
+             user_agent: Optional[str] = None) -> bool:
+        """Whether a feature flag is on for a person. The same person gets the same answer while the flag stays as it is.
+
+        `flag` is the flag's key; a key that has no flag is off. Say who is asking with `user_id`, or, for someone
+        with no id, their `ip` and `user_agent`, which are not stored. With tracking disabled it is off and nothing
+        is sent.
+        """
+        if self._disabled:
+            return False
+        answer = self._request("POST", "/v1/flag", {"flag": flag, "user_id": user_id, "ip": ip, "user_agent": user_agent})
+        return (answer or {}).get("on") is True
+
     def _send(self, method: str, path: str, body: dict) -> None:
         if not self._disabled:
             self._request(method, path, body)

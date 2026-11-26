@@ -125,6 +125,36 @@ class Conformance(unittest.TestCase):
         self.assertEqual(self.client.experiment("pricing", ("control", "new")), "control")
         self.assertEqual(seen, [])
 
+    def test_a_flag_answers_with_the_servers_switch(self):
+        answers.append((200, '{"flag": "new-checkout", "on": true}'))
+        self.assertIs(self.client.flag("new-checkout", user_id="user-1"), True)
+        self.assertEqual(seen[0]["method"], "POST")
+        self.assertEqual(seen[0]["path"], "/v1/flag")
+        self.assertEqual(seen[0]["body"], {"project": SUITE["project"], "flag": "new-checkout", "user_id": "user-1"})
+
+    def test_a_flag_that_is_off_is_false(self):
+        answers.append((200, '{"flag": "new-checkout", "on": false}'))
+        self.assertIs(self.client.flag("new-checkout", ip="203.0.113.7", user_agent="Mozilla/5.0"), False)
+        self.assertEqual(seen[0]["body"], {"project": SUITE["project"], "flag": "new-checkout", "ip": "203.0.113.7", "user_agent": "Mozilla/5.0"})
+
+    def test_a_refused_flag_raises(self):
+        answers.append((403, '{"error": "this key is limited to channels"}'))
+        with self.assertRaises(Refused) as raised:
+            self.client.flag("new-checkout", user_id="user-1")
+        self.assertEqual(raised.exception.status, 403)
+        self.assertEqual(len(seen), 1)
+
+    def test_a_flag_that_cannot_be_had_raises_unreachable(self):
+        answers.extend([(503, "{}"), (503, "{}")])
+        with self.assertRaises(Unreachable):
+            self.client.flag("new-checkout", user_id="user-1")
+        self.assertEqual(len(seen), 2)
+
+    def test_a_disabled_flag_is_off(self):
+        self.client.disable_tracking()
+        self.assertIs(self.client.flag("new-checkout", user_id="user-1"), False)
+        self.assertEqual(seen, [])
+
     def test_disabled_tracking_sends_nothing(self):
         self.client.disable_tracking()
         self.client.track(channel="x", event="y")
