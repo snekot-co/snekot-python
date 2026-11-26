@@ -29,7 +29,7 @@ events.insight.increment(title="Orders", value=1)
 variant = events.experiment("pricing-page", ["control", "annual-first"], user_id="user-123")
 ```
 
-`flag` asks whether a feature flag is on for a person:
+`flag` asks whether a [feature flag](https://snekot.co/docs/flags) is on for a person:
 
 ```python
 if events.flag("new-checkout", user_id="user-123"):
